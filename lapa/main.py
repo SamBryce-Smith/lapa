@@ -100,15 +100,27 @@ from lapa.correction import correct_talon
               ' this default cutoff will be applied.',
               default=10,
               type=int)
+@click.option('--disable_internal_priming_filter',
+              help='Disable internal priming filter that checks for high genomic A content immediately downstream of peak.'
+              ' Generally not recommended unless you have a protocol that should avoid internal priming artefacts (e.g. adapter ligation)',
+              default=False,
+              type=bool)
+
 def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
              counting_method, min_tail_len=10, min_percent_a=0.9, mapq=10,
              cluster_extent_cutoff=3, cluster_ratio_cutoff=0.05, cluster_window=25,
              min_replication_rate=0.95, replication_rolling_size=1000,
              replication_num_sample=2, replication_min_count=1,
-             non_replicates_read_threhold=10):
+             non_replicates_read_threhold=10, disable_internal_priming_filter=False):
     '''
     CLI interface for lapa polyA cluster calling.
     '''
+
+    if disable_internal_priming_filter:
+        filter_internal_priming = False
+    else:
+        filter_internal_priming = True
+
     lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          counting_method, min_tail_len=min_tail_len,
          min_percent_a=min_percent_a,
@@ -119,7 +131,8 @@ def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          replication_rolling_size=replication_rolling_size,
          replication_num_sample=replication_num_sample,
          replication_min_count=replication_min_count,
-         non_replicates_read_threhold=non_replicates_read_threhold)
+         non_replicates_read_threhold=non_replicates_read_threhold,
+         filter_internal_priming=filter_internal_priming)
 
 
 @click.command()

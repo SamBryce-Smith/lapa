@@ -337,7 +337,7 @@ class Lapa(_Lapa):
         'polyA_site', 'fracA', 'signal',
         'Feature', 'annotated_site'
     ]
-    
+
     def __init__(self, fasta, annotation, chrom_sizes, output_dir, method='end',
                  min_tail_len=10, min_percent_a=0.9, mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
@@ -392,7 +392,7 @@ class LapaTss(_Lapa):
     _keep_cols = [
             'tss_site', 'Feature', 'annotated_site'
     ]
-    
+
     def __init__(self, fasta, annotation, chrom_sizes, output_dir,
                  method='start', mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25,
@@ -434,7 +434,8 @@ def lapa(alignment: str, fasta: str, annotation: str, chrom_sizes :str, output_d
          cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
          min_replication_rate=0.95, replication_rolling_size=1000,
          replication_num_sample=2, replication_min_count=1,
-         non_replicates_read_threhold=10):
+         non_replicates_read_threhold=10,
+         filter_internal_priming=True):
     '''
     LAPA high level api for polyA cluster calling.
 
@@ -484,6 +485,8 @@ def lapa(alignment: str, fasta: str, annotation: str, chrom_sizes :str, output_d
       replication_min_count: Minimum count needed to recognize region as expressed
       non_replicates_read_threhold: Minimum read count need for the samples without replication.
         If there is not replicate samples for the sample, this default cutoff will be applied.
+      filter_internal_priming: Whether to filter peaks for putative internal priming artefacts by
+      scanning the immediate downstream genomic sequence for high A content.
     '''
     _lapa = Lapa(fasta, annotation, chrom_sizes, output_dir, method=method,
                  min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq,
@@ -493,7 +496,9 @@ def lapa(alignment: str, fasta: str, annotation: str, chrom_sizes :str, output_d
                  replication_rolling_size=replication_rolling_size,
                  replication_num_sample=replication_num_sample,
                  replication_min_count=replication_min_count,
-                 non_replicates_read_threhold=non_replicates_read_threhold)
+                 non_replicates_read_threhold=non_replicates_read_threhold,
+                 filter_internal_priming=filter_internal_priming
+                 )
     _lapa(alignment)
 
 
