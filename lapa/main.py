@@ -103,8 +103,8 @@ from lapa.correction import correct_talon
 @click.option('--disable_internal_priming_filter',
               help='Disable internal priming filter that checks for high genomic A content immediately downstream of peak.'
               ' Generally not recommended unless you have a protocol that should avoid internal priming artefacts (e.g. adapter ligation)',
-              default=False,
-              type=bool)
+              is_flag=True,
+              )
 
 def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
              counting_method, min_tail_len=10, min_percent_a=0.9, mapq=10,
