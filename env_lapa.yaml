@@ -1,0 +1,11 @@
+name: lapa
+
+channels:
+        - conda-forge
+        - bioconda
+dependencies:
+        - python=3.7.12
+        - pyranges>=0.0.71,<=0.0.123
+        - pip
+        - pip:
+                - .
