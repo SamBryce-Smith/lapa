@@ -14,7 +14,7 @@ requirements = [
     'pybigwig',
     'scipy',
     'bamread>=0.0.10',
-    'pyranges>=0.0.71',
+    'pyranges>=0.0.71,<=0.0.123',
     'sorted-nearest>=0.0.35',
     'kipoiseq>=0.3.0',
     'matplotlib',
