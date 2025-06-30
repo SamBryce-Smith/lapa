@@ -14,8 +14,20 @@ Alternative polyadenylation detection from diverse data sources such as 3'-seq, 
 
 ## Installation
 
+Install with conda/mamba:
+
+```bash
+# for development, use env_dev_lapa.yaml
+conda env create -f env_lapa.yaml
+conda activate lapa
 ```
-pip install lapa
+
+Alternatively:
+
+```bash
+git clone https://github.com/SamBryce-Smith/lapa
+cd lapa
+pip install .
 ```
 
 ## Poly(A) site calling from long-read RNA-seq or 3'-seq

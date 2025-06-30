@@ -14,7 +14,7 @@ requirements = [
     'pybigwig',
     'scipy',
     'bamread>=0.0.10',
-    'pyranges>=0.0.71',
+    'pyranges>=0.0.71,<=0.0.123',
     'sorted-nearest>=0.0.35',
     'kipoiseq>=0.3.0',
     'matplotlib',
@@ -27,11 +27,11 @@ test_requirements = ['pytest']
 
 setup(
     name='lapa',
-    version='0.0.5',
+    version='0.0.6',
 
-    author="M. Hasan Çelik",
+    author=" ".join(["M. Hasan Çelik", "Sam Bryce-Smith"]),
     author_email='muhammedhasancelik@gmail.com',
-    url='https://github.com/mortazavilab/lapa',
+    url='https://github.com/SamBryce-Smith/lapa',
 
     keywords=['genomics', 'long read RNA-seq', 'APA'],
     description="Tools for alternative polyadenylation detection and analysis "
