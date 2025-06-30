@@ -1,6 +1,6 @@
 # Alternative: Start with Python 3.7 and install uv
 # use full version instead of slim to ensure gcc compiler installed (bamread dependency)
-FROM python:3.7.17-bookworm
+FROM python:3.7.17-bookworm as builder
 
 # Copy uv binary from official image (pinned to specific version for reproducibility)
 COPY --from=ghcr.io/astral-sh/uv:0.7.17 /uv /uvx /bin/
@@ -24,6 +24,11 @@ COPY lapa/ /app/lapa/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system "pyrle<0.0.41" "pyranges==0.0.120" && \
     uv pip install --system .
+
+# Use a barebones python image for actually running the command line tools
+FROM python:3.7.17-slim-bookworm
+COPY --from=builder /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Verify installation
 RUN lapa --help
