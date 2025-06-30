@@ -27,7 +27,7 @@ test_requirements = ['pytest']
 
 setup(
     name='lapa',
-    version='0.0.6',
+    version='0.0.7',
 
     author=" ".join(["M. Hasan Çelik", "Sam Bryce-Smith"]),
     author_email='muhammedhasancelik@gmail.com',
