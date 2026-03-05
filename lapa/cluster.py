@@ -181,23 +181,26 @@ class PolyACluster(Cluster):
         return self.peak(window=window, std=std)
 
     def polyA_signal_sequence(self, fasta: FastaStringExtractor,
-                              polyA_site: int):
+                              polyA_site: int, upstream_window: int = 60,
+                              downstream_window: int = 10):
         '''
         Poly(A) signal sequence in the vicinity of poly(A) site.
 
         Args:
           fasta: Fasta to extract sequences.
           polyA_site: Poly(A) site based on the peak calling.
+          upstream_window: Number of bases upstream of the poly(A) site to search.
+          downstream_window: Number of bases downstream of the poly(A) site to search.
         '''
         if isinstance(fasta, str):
             fasta = FastaStringExtractor(fasta, use_strand=True)
 
         if self.Strand == '+':
-            start = polyA_site - 60
-            end = polyA_site + 10
+            start = polyA_site - upstream_window
+            end = polyA_site + downstream_window
         elif self.Strand == '-':
-            start = polyA_site - 10
-            end = polyA_site + 60
+            start = polyA_site - downstream_window
+            end = polyA_site + upstream_window
 
         interval = Interval(self.Chromosome, start, end,
                             strand=self.Strand)
@@ -244,13 +247,18 @@ class PolyACluster(Cluster):
 
         return sum('A' == i for i in seq)
 
-    def to_dict(self, fasta):
+    def to_dict(self, fasta, upstream_window: int = 60,
+                downstream_window: int = 10):
         '''
         Convert cluster into dictonary annotate regulatory elements
           (polyA_signal and fracA) in the cluster using fasta file.
 
         Args:
           fasta: FastaStringExtractor object of kipoiseq.
+          upstream_window: Number of bases upstream of the poly(A) site to search
+            for poly(A) signal sequences.
+          downstream_window: Number of bases downstream of the poly(A) site to search
+            for poly(A) signal sequences.
         '''
         cluster = super().to_dict(fasta)
         cluster['polyA_site'] = cluster['peak']
@@ -258,7 +266,9 @@ class PolyACluster(Cluster):
 
         cluster['fracA'] = self.fraction_A(fasta, cluster['polyA_site'])
         signal_seq_loc, signal_seq = self.polyA_signal_sequence(
-            fasta, cluster['polyA_site'])
+            fasta, cluster['polyA_site'],
+            upstream_window=upstream_window,
+            downstream_window=downstream_window)
         cluster['signal'] = f'{signal_seq_loc}@{signal_seq}'
 
         return cluster
@@ -410,6 +420,31 @@ class PolyAClustering(Clustering):
       ...
     '''
     Cluster = PolyACluster
+
+    def __init__(self, fasta, extent_cutoff=3, ratio_cutoff=0.05, window=25,
+                 groupby=None, fields=None, progress=True,
+                 upstream_window=60, downstream_window=10):
+        super().__init__(fasta, extent_cutoff=extent_cutoff,
+                         ratio_cutoff=ratio_cutoff, window=window,
+                         groupby=groupby, fields=fields, progress=progress)
+        self.upstream_window = upstream_window
+        self.downstream_window = downstream_window
+
+    def to_df(self, df_tes):
+        '''
+        Perform clustering based on read end counts.
+
+        Args:
+          df_tes: Counts per genomics position obtain with counting classes
+            in pandas.DataFrame with
+            `Chromosome, Start, End, Strand, count, coverage` columns.
+        '''
+        return pd.DataFrame([
+            cluster.to_dict(self.fasta,
+                            upstream_window=self.upstream_window,
+                            downstream_window=self.downstream_window)
+            for cluster in self.cluster(df_tes)
+        ])
 
 
 class TssClustering(Clustering):

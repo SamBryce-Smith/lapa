@@ -343,7 +343,8 @@ class Lapa(_Lapa):
                  cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
                  filter_internal_priming=True, replication_num_sample=2,
-                 replication_min_count=1, non_replicates_read_threhold=10):
+                 replication_min_count=1, non_replicates_read_threhold=10,
+                 upstream_window=60, downstream_window=10):
 
         if method not in {'tail', 'end'}:
             raise ValueError(
@@ -360,6 +361,8 @@ class Lapa(_Lapa):
         self.min_percent_a = min_percent_a
 
         self.filter_internal_priming = filter_internal_priming
+        self.upstream_window = upstream_window
+        self.downstream_window = downstream_window
 
         self.prefix = 'polyA'
         self.cluster_col_order = cluster_col_order
@@ -373,7 +376,9 @@ class Lapa(_Lapa):
         return PolyAClustering(self.fasta,
                                extent_cutoff=self.cluster_extent_cutoff,
                                ratio_cutoff=self.cluster_ratio_cutoff,
-                               window=self.cluster_window)
+                               window=self.cluster_window,
+                               upstream_window=self.upstream_window,
+                               downstream_window=self.downstream_window)
 
     def create_genomic_regions(self):
         return PolyAGenomicRegions(self.annotation)
@@ -434,7 +439,8 @@ def lapa(alignment: str, fasta: str, annotation: str, chrom_sizes :str, output_d
          cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
          min_replication_rate=0.95, replication_rolling_size=1000,
          replication_num_sample=2, replication_min_count=1,
-         non_replicates_read_threhold=10, filter_internal_priming=True):
+         non_replicates_read_threhold=10, filter_internal_priming=True,
+         upstream_window=60, downstream_window=10):
     '''
     LAPA high level api for polyA cluster calling.
 
@@ -484,7 +490,11 @@ def lapa(alignment: str, fasta: str, annotation: str, chrom_sizes :str, output_d
       replication_min_count: Minimum count needed to recognize region as expressed
       non_replicates_read_threhold: Minimum read count need for the samples without replication.
         If there is not replicate samples for the sample, this default cutoff will be applied.
-      filter_internal_priming:  Whether to filter peaks for internal priming artefacts based on genomic A content immediately downstream of representative position (> 7 / 10 As & no polyA signal sequence found (-60 PAS +10)).     
+      filter_internal_priming:  Whether to filter peaks for internal priming artefacts based on genomic A content immediately downstream of representative position (> 7 / 10 As & no polyA signal sequence found (-60 PAS +10)).
+      upstream_window: Number of bases upstream of the poly(A) site to search
+        for poly(A) signal sequences.
+      downstream_window: Number of bases downstream of the poly(A) site to search
+        for poly(A) signal sequences.
     '''
     _lapa = Lapa(fasta, annotation, chrom_sizes, output_dir, method=method,
                  min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq,
@@ -495,7 +505,9 @@ def lapa(alignment: str, fasta: str, annotation: str, chrom_sizes :str, output_d
                  replication_num_sample=replication_num_sample,
                  replication_min_count=replication_min_count,
                  non_replicates_read_threhold=non_replicates_read_threhold,
-                 filter_internal_priming=filter_internal_priming)
+                 filter_internal_priming=filter_internal_priming,
+                 upstream_window=upstream_window,
+                 downstream_window=downstream_window)
     _lapa(alignment)
 
 
