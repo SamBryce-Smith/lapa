@@ -197,8 +197,8 @@ class _Lapa:
             if len(samples) == 1:
                 sample = samples[0]
                 self.warn_log.warning(
-                    f'Appling non_replicates_read_threhold={self.non_replicates_read_threhold}'
-                    ' to filter sample {sample} because sample does not replicates')
+                    f'Applying non_replicates_read_threhold={self.non_replicates_read_threhold}'
+                    f' to filter sample {sample} because sample does not replicate')
                 df_cluster = rep_samples[sample]
                 rep_samples = {
                     sample: df_cluster[df_cluster['count'] >= self.non_replicates_read_threhold]
@@ -354,7 +354,8 @@ class Lapa(_Lapa):
                          cluster_extent_cutoff, cluster_window,
                          cluster_ratio_cutoff,
                          min_replication_rate, replication_rolling_size,
-                         replication_num_sample, replication_min_count)
+                         replication_num_sample, replication_min_count,
+                         non_replicates_read_threhold)
 
         self.min_tail_len = min_tail_len
         self.min_percent_a = min_percent_a
@@ -410,7 +411,8 @@ class LapaTss(_Lapa):
                          cluster_extent_cutoff, cluster_window,
                          cluster_ratio_cutoff,
                          min_replication_rate, replication_rolling_size,
-                         replication_num_sample, replication_min_count)
+                         replication_num_sample, replication_min_count,
+                         non_replicates_read_threhold)
 
         self.prefix = 'tss'
         self.cluster_col_order = tss_cluster_col_order
