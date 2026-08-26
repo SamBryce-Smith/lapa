@@ -1,7 +1,7 @@
 # Multi-stage build: resolve/install the pixi-locked "default" (non-editable,
 # production) environment in a build stage that has pixi available, then copy
 # only the resulting environment into a minimal runtime image.
-FROM ghcr.io/prefix-dev/pixi:0.77.1-jammy AS build
+FROM --platform=linux/amd64 ghcr.io/prefix-dev/pixi:0.77.1-jammy AS build
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN printf '#!/bin/sh\n%s\nexec "$@"' "$(pixi shell-hook -e default)" > /app/ent
     chmod +x /app/entrypoint.sh
 
 # Barebones runtime image: no pixi binary, build cache, or build tooling.
-FROM ubuntu:22.04 AS production
+FROM --platform=linux/amd64 ubuntu:22.04 AS production
 
 WORKDIR /app
 COPY --from=build /app/.pixi/envs/default /app/.pixi/envs/default
