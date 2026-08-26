@@ -1,7 +1,7 @@
 # Multi-stage build: resolve/install the pixi-locked "default" (non-editable,
 # production) environment in a build stage that has pixi available, then copy
 # only the resulting environment into a minimal runtime image.
-FROM ghcr.io/prefix-dev/pixi:0.71.0 AS build
+FROM ghcr.io/prefix-dev/pixi:0.77.1-jammy AS build
 
 WORKDIR /app
 
