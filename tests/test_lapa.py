@@ -194,6 +194,35 @@ def test_lapa_bam_pb(tmp_path):
     assert df_cluster.shape == df_apa.shape
 
 
+def test_lapa_bam_pb_non_replicates_threshold(tmp_path):
+    """Test that a custom non_replicates_read_threhold is correctly propagated
+    through to the filtering logic and recorded in warnings.log."""
+    import re
+
+    output_dir = tmp_path / 'lapa'
+    non_replicates_read_threhold = 5
+
+    lapa(quantseq_gm12_bam, fasta, gtf, chrom_sizes, output_dir, method='tail',
+         non_replicates_read_threhold=non_replicates_read_threhold)
+
+    warnings_log = output_dir / 'logs' / 'warnings.log'
+    assert warnings_log.exists(), "warnings.log not found"
+
+    log_text = warnings_log.read_text()
+    match = re.search(r'non_replicates_read_threhold=(\d+)', log_text)
+    assert match is not None, \
+        "non_replicates_read_threhold not found in warnings.log"
+    logged_threshold = int(match.group(1))
+    assert logged_threshold == non_replicates_read_threhold, (
+        f"Expected non_replicates_read_threhold={non_replicates_read_threhold} "
+        f"in warnings.log but got {logged_threshold}"
+    )
+
+    df_apa = read_polyA_cluster(
+        str(output_dir / 'sample' / 'quantseq3_gm12878_chr17_rep1.bed'))
+    assert df_apa['count'].min() >= non_replicates_read_threhold
+
+
 def test_lapa_bam_quantseq(tmp_path):
 
     output_dir = tmp_path / 'lapa'
