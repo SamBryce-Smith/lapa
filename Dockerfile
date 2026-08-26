@@ -1,7 +1,15 @@
 # Multi-stage build: resolve/install the pixi-locked "default" (non-editable,
 # production) environment in a build stage that has pixi available, then copy
 # only the resulting environment into a minimal runtime image.
-FROM --platform=linux/amd64 ghcr.io/prefix-dev/pixi:0.77.1-jammy AS build
+
+# pixi.lock only declares linux-64 (x86_64); pin the build platform so
+# `pixi install --locked` matches it regardless of host architecture (e.g.
+# Apple Silicon). Declared as an ARG (default linux/amd64) rather than a
+# literal so `docker build --build-arg PIXI_PLATFORM=...` can still override
+# it, and so Docker's linter doesn't flag a hardcoded --platform constant.
+ARG PIXI_PLATFORM=linux/amd64
+
+FROM --platform=$PIXI_PLATFORM ghcr.io/prefix-dev/pixi:0.77.1-jammy AS build
 
 WORKDIR /app
 
@@ -21,7 +29,7 @@ RUN printf '#!/bin/sh\n%s\nexec "$@"' "$(pixi shell-hook -e default)" > /app/ent
     chmod +x /app/entrypoint.sh
 
 # Barebones runtime image: no pixi binary, build cache, or build tooling.
-FROM --platform=linux/amd64 ubuntu:22.04 AS production
+FROM --platform=$PIXI_PLATFORM ubuntu:22.04 AS production
 
 WORKDIR /app
 COPY --from=build /app/.pixi/envs/default /app/.pixi/envs/default
