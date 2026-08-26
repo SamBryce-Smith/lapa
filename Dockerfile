@@ -1,37 +1,43 @@
-# Alternative: Start with Python 3.7 and install uv
-# use full version instead of slim to ensure gcc compiler installed (bamread dependency)
-FROM python:3.7.17-bookworm as builder
+# Multi-stage build: resolve/install the pixi-locked "default" (non-editable,
+# production) environment in a build stage that has pixi available, then copy
+# only the resulting environment into a minimal runtime image.
 
-# Copy uv binary from official image (pinned to specific version for reproducibility)
-COPY --from=ghcr.io/astral-sh/uv:0.7.17 /uv /uvx /bin/
+# pixi.lock only declares linux-64 (x86_64); pin the build platform so
+# `pixi install --locked` matches it regardless of host architecture (e.g.
+# Apple Silicon). Declared as an ARG (default linux/amd64) rather than a
+# literal so `docker build --build-arg PIXI_PLATFORM=...` can still override
+# it, and so Docker's linter doesn't flag a hardcoded --platform constant.
+ARG PIXI_PLATFORM=linux/amd64
 
-# Set environment variables for uv
-ENV UV_SYSTEM_PYTHON=1
-ENV UV_COMPILE_BYTECODE=1
-ENV UV_LINK_MODE=copy
+FROM --platform=$PIXI_PLATFORM ghcr.io/prefix-dev/pixi:0.77.1-jammy AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy minimal package files
-COPY README.md setup.py /app/
+# Copy just what's needed to install the locked "default" environment: pixi's
+# manifest/lockfile, plus the source tree required to build the local,
+# non-editable "lapa" pypi-dependency (pyproject.toml references README.md).
+COPY pyproject.toml pixi.lock README.md /app/
 COPY lapa/ /app/lapa/
 
-# Install the package using uv with cache mount (+ certain dependencies first to avoid uv resolving max compatible version and returning errors)
-# Install pyranges 0.0.120 to avoid "pandas.errors.IntCastingNaNError: Cannot convert non-finite values (NA or inf) to integer" error with 
-# suspect introduced in 0.0.121 (https://github.com/pyranges/pyranges/blob/c981927c7721073e96ceb85192ceafd36173d4a8/CHANGELOG.txt#L53)
-# https://github.com/mortazavilab/lapa/issues/30
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system "pyrle<0.0.41" "pyranges==0.0.120" && \
-    uv pip install --system .
+# --locked fails the build instead of silently re-solving if pixi.lock is out
+# of sync with pyproject.toml.
+RUN pixi install --locked -e default
 
-# Use a barebones python image for actually running the command line tools
-FROM python:3.7.17-slim-bookworm
-COPY --from=builder /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Generate an entrypoint that activates the pixi environment, then execs the
+# container command, so the runtime image doesn't need pixi installed at all.
+RUN printf '#!/bin/sh\n%s\nexec "$@"' "$(pixi shell-hook -e default)" > /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
+# Barebones runtime image: no pixi binary, build cache, or build tooling.
+FROM --platform=$PIXI_PLATFORM ubuntu:22.04 AS production
+
+WORKDIR /app
+COPY --from=build /app/.pixi/envs/default /app/.pixi/envs/default
+COPY --from=build /app/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Verify installation
-RUN lapa --help
+RUN ["/entrypoint.sh", "lapa", "--help"]
 
 # Default command
 CMD ["lapa", "--help"]

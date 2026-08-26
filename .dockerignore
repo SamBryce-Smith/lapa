@@ -26,6 +26,10 @@ wheels/
 .gitignore
 .github/
 
+# pixi (platform/arch-specific; would break builds on a different target
+# platform than the machine that populated this directory)
+.pixi/
+
 # LAPA-specific
 configs/
 docs/
