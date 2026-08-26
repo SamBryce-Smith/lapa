@@ -144,3 +144,6 @@ data/
 .snakemake
 *~
 logs/*
+# pixi environments
+.pixi/*
+!.pixi/config.toml
