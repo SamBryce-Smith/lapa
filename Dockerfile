@@ -34,9 +34,23 @@ FROM --platform=$PIXI_PLATFORM ubuntu:22.04 AS production
 WORKDIR /app
 COPY --from=build /app/.pixi/envs/default /app/.pixi/envs/default
 COPY --from=build /app/entrypoint.sh /entrypoint.sh
+
+# Activate the environment for *every* invocation, not just the ones that go
+# through ENTRYPOINT. Apptainer/Singularity translate ENTRYPOINT into
+# /.singularity.d/runscript, which only `apptainer run` uses; `apptainer exec`
+# (what Snakemake's `container:` directive emits) bypasses it and would not
+# find `lapa` on PATH. The image's environment block, by contrast, is
+# translated separately and is sourced by exec, run, and shell alike.
+ENV CONDA_PREFIX="/app/.pixi/envs/default" \
+    CONDA_DEFAULT_ENV="default" \
+    PATH="/app/.pixi/envs/default/bin:$PATH"
+
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Verify installation
+# Verify both invocation paths. `RUN` does not go through ENTRYPOINT, so the
+# first line exercises the `apptainer exec` case and fails the build if the
+# environment baked into ENV above is not sufficient on its own.
+RUN lapa --help && python -c "import lapa"
 RUN ["/entrypoint.sh", "lapa", "--help"]
 
 # Default command

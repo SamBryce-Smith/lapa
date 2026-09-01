@@ -12,7 +12,48 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Build the image and check it is usable before anything reaches the
+  # registry. The Apptainer leg matters specifically because Snakemake invokes
+  # containers with `singularity exec`, which bypasses the Docker ENTRYPOINT.
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: lapa:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test image with Docker
+        run: ./scripts/test_container.sh docker lapa:ci
+
+      - name: Set up Apptainer
+        uses: eWaterCycle/setup-apptainer@v2
+
+      # Convert the exact image just built, rather than pulling one from a
+      # registry, so the SIF under test matches what will be published.
+      - name: Convert image to SIF
+        run: |
+          docker save lapa:ci -o lapa.tar
+          apptainer build lapa.sif docker-archive://lapa.tar
+
+      - name: Test SIF with Apptainer
+        run: ./scripts/test_container.sh apptainer lapa.sif
+
   build-and-push:
+    needs: build-and-test
     runs-on: ubuntu-latest
     permissions:
       contents: read
